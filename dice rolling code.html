@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Dice Roller</title>
+    <style>
+        body { text-align: center; font-family: sans-serif; padding-top: 50px; }
+        #dice { font-size: 80px; margin: 20px; }
+        button { padding: 10px 20px; font-size: 18px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h1>Dice Roller</h1>
+    <!-- This div will display the result -->
+    <div id="dice">?</div>
+    <button onclick="rollDice()">Roll Dice</button>
+
+    <script>
+        function rollDice() {
+            // Generates a random integer from 1 to 6
+            const result = Math.floor(Math.random() * 6) + 1;
+            
+            // Updates the HTML element with the result
+            document.getElementById('dice').innerHTML = result;
+        }
+    </script>
+
+</body>
+</html>
