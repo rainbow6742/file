@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chaos Particles</title>
+    <style>
+        body { 
+            margin: 0; 
+            background: #000; 
+            overflow: hidden; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh;
+            cursor: pointer;
+        }
+        .instruction {
+            color: white;
+            font-family: sans-serif;
+            font-size: 1.5rem;
+            pointer-events: none;
+            user-select: none;
+            opacity: 0.5;
+        }
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            animation: explode 1s forwards ease-out;
+        }
+        @keyframes explode {
+            0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) rotate(var(--tr)); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="instruction">CLICK ANYWHERE</div>
+
+    <script>
+        function createParticle(x, y) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            
+            // Random Size
+            const size = Math.random() * 50 + 10 + 'px';
+            p.style.width = size;
+            p.style.height = size;
+            
+            // Random Color
+            p.style.background = `hsl(${Math.random() * 360}, 100%, 50%)`;
+            
+            // Random Shape (Square or Circle)
+            if (Math.random() > 0.5) p.style.borderRadius = '50%';
+
+            // Set destination for the CSS animation
+            const tx = (Math.random() - 0.5) * 600 + 'px';
+            const ty = (Math.random() - 0.5) * 600 + 'px';
+            const tr = Math.random() * 720 + 'deg';
+            
+            p.style.setProperty('--tx', tx);
+            p.style.setProperty('--ty', ty);
+            p.style.setProperty('--tr', tr);
+
+            // Position at mouse click
+            p.style.left = x - 25 + 'px';
+            p.style.top = y - 25 + 'px';
+
+            document.body.appendChild(p);
+
+            // Cleanup
+            setTimeout(() => p.remove(), 1000);
+        }
+
+        window.addEventListener('mousedown', (e) => {
+            // Create 20 random particles per click
+            for(let i=0; i<20; i++) {
+                createParticle(e.clientX, e.clientY);
+            }
+        });
+    </script>
+</body>
+</html>
+
