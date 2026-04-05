@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplication Challenge</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #f0f8ff; margin: 0; }
+        .game-container { background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
+        #question { font-size: 3rem; margin-bottom: 1rem; color: #333; }
+        input { font-size: 1.5rem; padding: 10px; width: 80px; text-align: center; border: 2px solid #ddd; border-radius: 8px; }
+        button { font-size: 1.2rem; padding: 10px 20px; cursor: pointer; background-color: #4CAF50; color: white; border: none; border-radius: 8px; margin-left: 10px; }
+        button:hover { background-color: #45a049; }
+        #feedback { margin-top: 1rem; font-weight: bold; min-height: 1.2em; }
+        .score { margin-top: 1rem; color: #666; }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <div id="question">Loading...</div>
+    <input type="number" id="answer" placeholder="?">
+    <button onclick="checkAnswer()">Submit</button>
+    <div id="feedback"></div>
+    <div class="score">Score: <span id="scoreValue">0</span></div>
+</div>
+
+<script>
+    let num1, num2, correctAnswer;
+    let score = 0;
+
+    function generateQuestion() {
+        num1 = Math.floor(Math.random() * 10) + 1;
+        num2 = Math.floor(Math.random() * 10) + 1;
+        correctAnswer = num1 * num2;
+        document.getElementById('question').innerText = `${num1} × ${num2}`;
+        document.getElementById('answer').value = '';
+        document.getElementById('answer').focus();
+    }
+
+    function checkAnswer() {
+        const userAnswer = parseInt(document.getElementById('answer').value);
+        const feedback = document.getElementById('feedback');
+        
+        if (userAnswer === correctAnswer) {
+            score++;
+            feedback.innerText = "Correct! 🎉";
+            feedback.style.color = "green";
+            document.getElementById('scoreValue').innerText = score;
+            setTimeout(generateQuestion, 1000);
+        } else {
+            feedback.innerText = "Try again! ❌";
+            feedback.style.color = "red";
+        }
+    }
+
+    // Allow "Enter" key to submit
+    document.getElementById('answer').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') checkAnswer();
+    });
+
+    // Start game
+    generateQuestion();
+</script>
+
+</body>
+</html>
+
