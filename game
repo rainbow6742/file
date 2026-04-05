@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Random Chaos Generator</title>
+    <style>
+        body { 
+            margin: 0; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            font-family: 'Arial Black', sans-serif;
+            transition: background-color 0.5s ease;
+            overflow: hidden;
+        }
+        #display-text {
+            font-size: 4rem;
+            color: white;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+            z-index: 10;
+        }
+        #shape {
+            width: 150px;
+            height: 150px;
+            transition: all 0.4s ease;
+            margin-bottom: 30px;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border: none;
+            border-radius: 50px;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        button:active { transform: scale(0.95); }
+    </style>
+</head>
+<body>
+
+    <div id="display-text">READY?</div>
+    <div id="shape"></div>
+    <button onclick="generateRandom()">GENERATE RANDOM</button>
+
+    <script>
+        const words = ["NEBULA", "GLITCH", "COSMIC", "ZEPHYR", "QUARK", "VORTEX", "PHANTOM", "PIXEL"];
+        
+        function generateRandom() {
+            // 1. Random Background Color
+            const randomColor = `hsl(${Math.random() * 360}, 70%, 60%)`;
+            document.body.style.backgroundColor = randomColor;
+
+            // 2. Random Word
+            const randomWord = words[Math.floor(Math.random() * words.length)];
+            document.getElementById('display-text').innerText = randomWord;
+
+            // 3. Random Shape
+            const shape = document.getElementById('shape');
+            const shapeType = Math.floor(Math.random() * 3);
+            
+            shape.style.borderRadius = "0"; // Reset
+            if (shapeType === 0) { // Circle
+                shape.style.borderRadius = "50%";
+                shape.style.clipPath = "none";
+            } else if (shapeType === 1) { // Triangle
+                shape.style.clipPath = "polygon(50% 0%, 0% 100%, 100% 100%)";
+            } else { // Square/Rectangle
+                shape.style.clipPath = "none";
+            }
+            
+            shape.style.backgroundColor = `hsl(${Math.random() * 360}, 80%, 40%)`;
+            shape.style.transform = `rotate(${Math.random() * 360}deg) scale(${0.5 + Math.random()})`;
+        }
+    </script>
+</body>
+</html>
+
