@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Geometry Dash Cube Mode</title>
+    <style>
+        body { margin: 0; background: #222; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; }
+        canvas { background: #44aaff; border: 4px solid #fff; }
+        .instructions { position: absolute; top: 20px; color: white; }
+    </style>
+</head>
+<body>
+    <div class="instructions">Click/Space to Jump</div>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas"), ctx = canvas.getContext("2d");
+        const player = { x: 100, y: 300, size: 40, color: "#ffff00", dy: 0, jumpForce: -11, gravity: 0.6, onGround: false, rotation: 0 };
+        function update() {
+            player.dy += player.gravity;
+            player.y += player.dy;
+            if (player.y + player.size > 360) {
+                player.y = 360 - player.size;
+                player.dy = 0;
+                player.onGround = true;
+                player.rotation = Math.round(player.rotation / 90) * 90;
+            } else { player.onGround = false; player.rotation += 5; }
+        }
+        function draw() {
+            ctx.fillStyle = "#44aaff"; ctx.fillRect(0, 0, 800, 400);
+            ctx.fillStyle = "#0000aa"; ctx.fillRect(0, 360, 800, 40);
+            ctx.save();
+            ctx.translate(player.x + 20, player.y + 20);
+            ctx.rotate((player.rotation * Math.PI) / 180);
+            ctx.fillStyle = player.color; ctx.fillRect(-20, -20, 40, 40);
+            ctx.strokeStyle = "#000"; ctx.lineWidth = 3; ctx.strokeRect(-20, -20, 40, 40);
+            ctx.restore();
+        }
+        function jump() { if (player.onGround) player.dy = player.jumpForce; }
+        function loop() { update(); draw(); requestAnimationFrame(loop); }
+        window.addEventListener("keydown", (e) => { if (e.code === "Space") jump(); });
+        canvas.addEventListener("mousedown", jump);
+        loop();
+    </script>
+</body>
+</html>
+
