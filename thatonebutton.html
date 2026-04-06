@@ -1,0 +1,12 @@
+<button onclick="crashMemory()">Crash Memory</button>
+
+<script>
+function crashMemory() {
+  let txt = "crash";
+  while(true) {
+    txt += txt; // Rapidly doubles the string size
+    console.log(txt);
+  }
+}
+</script>
+
