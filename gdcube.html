@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometry Dash Simple Clone</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #111; color: white; font-family: 'Courier New', Courier, monospace; }
+        canvas { display: block; }
+        #endScreen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.85); display: none;
+            justify-content: center; align-items: center; flex-direction: column;
+            color: #00ffcc; font-size: 48px; text-align: center;
+        }
+        #timer { position: absolute; top: 10px; left: 10px; font-size: 24px; }
+    </style>
+</head>
+<body>
+
+<div id="timer">Time: 60</div>
+<div id="endScreen">
+    <h1>LEVEL COMPLETE</h1>
+    <p style="font-size: 20px;">Press Space to Restart</p>
+</div>
+<canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const endScreen = document.getElementById('endScreen');
+    const timerDisplay = document.getElementById('timer');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Game Config
+    const GROUND_Y = canvas.height * 0.75;
+    const CUBE_X = 100;
+    const GRAVITY = 0.8;
+    const JUMP_FORCE = -15;
+    const SPEED = 5;
+    const LEVEL_DURATION = 60; // seconds
+
+    let cube = {
+        x: CUBE_X, y: GROUND_Y - 40,
+        w: 40, h: 40,
+        vy: 0,
+        onGround: false,
+        rotation: 0
+    };
+
+    let obstacles = [];
+    let gameTime = 0;
+    let frames = 0;
+    let isGameOver = false;
+    let isLevelFinished = false;
+    let lastTime = Date.now();
+
+    // Input handling
+    window.addEventListener('keydown', e => {
+        if (e.code === 'Space') {
+            if (isGameOver) { resetGame(); }
+            else if (cube.onGround) {
+                cube.vy = JUMP_FORCE;
+                cube.onGround = false;
+            }
+        }
+    });
+
+    function spawnObstacle() {
+        const type = Math.random() > 0.4 ? 'spike' : 'block';
+        const height = type === 'spike' ? 40 : 60;
+        obstacles.push({
+            x: canvas.width,
+            y: GROUND_Y - height,
+            w: 40,
+            h: height,
+            type: type
+        });
+    }
+
+    function resetGame() {
+        cube.y = GROUND_Y - 40;
+        cube.vy = 0;
+        obstacles = [];
+        frames = 0;
+        gameTime = 0;
+        isGameOver = false;
+        isLevelFinished = false;
+        endScreen.style.display = 'none';
+        loop();
+    }
+
+    function loop() {
+        if (isGameOver || isLevelFinished) return;
+        
+        frames++;
+        if (frames % 100 === 0) spawnObstacle();
+
+        // Update Time
+        let now = Date.now();
+        if (now - lastTime >= 1000) {
+            gameTime++;
+            lastTime = now;
+            timerDisplay.innerText = "Time: " + (LEVEL_DURATION - gameTime);
+            if (gameTime >= LEVEL_DURATION) {
+                isLevelFinished = true;
+                endScreen.style.display = 'flex';
+                return;
+            }
+        }
+
+        // Physics
+        cube.vy += GRAVITY;
+        cube.y += cube.vy;
+
+        if (cube.y + cube.h > GROUND_Y) {
+            cube.y = GROUND_Y - cube.h;
+            cube.vy = 0;
+            cube.onGround = true;
+            // Snaps rotation to 90 degrees on ground
+            cube.rotation = Math.round(cube.rotation / 90) * 90;
+        } else {
+            cube.onGround = false;
+            cube.rotation += 3; // Spin in air
+        }
+
+        // Move obstacles
+        obstacles.forEach((o, i) => {
+            o.x -= SPEED;
+            
+            // Collision detection
+            if (cube.x < o.x + o.w && cube.x + cube.w > o.x &&
+                cube.y < o.y + o.h && cube.y + cube.h > o.y) {
+                isGameOver = true;
+                endScreen.style.display = 'flex';
+                endScreen.innerHTML = "<h1>GAME OVER</h1><p>Press Space</p>";
+            }
+
+            if (o.x + o.w < 0) obstacles.splice(i, 1);
+        });
+
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    function draw() {
+        // Background
+        ctx.fillStyle = '#222';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Ground
+        ctx.fillStyle = '#444';
+        ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(0, GROUND_Y, canvas.width, 2);
+
+        // Cube
+        ctx.save();
+        ctx.translate(cube.x + cube.w/2, cube.y + cube.h/2);
+        ctx.rotate(cube.rotation * Math.PI / 180);
+        ctx.fillStyle = '#00ffff';
+        ctx.fillRect(-cube.w/2, -cube.h/2, cube.w, cube.h);
+        // Eye
+        ctx.fillStyle = 'white';
+        ctx.fillRect(5, -15, 15, 15);
+        ctx.restore();
+
+        // Obstacles
+        obstacles.forEach(o => {
+            if (o.type === 'spike') {
+                ctx.fillStyle = '#ff4444';
+                ctx.beginPath();
+                ctx.moveTo(o.x, GROUND_Y);
+                ctx.lineTo(o.x + o.w / 2, o.y);
+                ctx.lineTo(o.x + o.w, GROUND_Y);
+                ctx.fill();
+            } else {
+                ctx.fillStyle = '#ffcc00';
+                ctx.fillRect(o.x, o.y, o.w, o.h);
+            }
+        });
+    }
+
+    loop();
+</script>
+</body>
+</html>
+
