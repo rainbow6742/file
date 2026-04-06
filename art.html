@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generative Forest</title>
+    <style>
+        body { margin: 0; background: #050505; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; cursor: pointer; }
+        canvas { filter: drop-shadow(0 0 10px rgba(255,255,255,0.1)); }
+        .hint { position: absolute; bottom: 20px; color: #444; font-family: monospace; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="hint">CLICK TO REGROW</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        drawFractal();
+    }
+
+    function drawTree(startX, startY, len, angle, branchWidth, color1, color2) {
+        ctx.beginPath();
+        ctx.save();
+        ctx.strokeStyle = color1;
+        ctx.fillStyle = color2;
+        ctx.lineWidth = branchWidth;
+        ctx.translate(startX, startY);
+        ctx.rotate(angle * Math.PI/180);
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -len);
+        ctx.stroke();
+
+        if (len < 10) {
+            // Draw "leaves" or "glow" at the tips
+            ctx.beginPath();
+            ctx.arc(0, -len, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            return;
+        }
+
+        // Recursively draw branches with random variations
+        drawTree(0, -len, len * 0.75, angle + (Math.random() * 30), branchWidth * 0.7, color1, color2);
+        drawTree(0, -len, len * 0.75, angle - (Math.random() * 30), branchWidth * 0.7, color1, color2);
+
+        ctx.restore();
+    }
+
+    function drawFractal() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Randomize theme
+        const hue = Math.random() * 360;
+        const color1 = `hsl(${hue}, 80%, 50%)`;
+        const color2 = `hsl(${(hue + 40) % 360}, 100%, 70%)`;
+
+        // Draw multiple trees for a "forest" look
+        const count = 5;
+        for(let i = 0; i < count; i++) {
+            const x = (canvas.width / count) * i + (Math.random() * 100);
+            const size = Math.random() * 50 + 80;
+            drawTree(x, canvas.height, size, 0, 15, color1, color2);
+        }
+    }
+
+    window.addEventListener('resize', resize);
+    window.addEventListener('click', drawFractal);
+    resize();
+</script>
+</body>
+</html>
+
