@@ -2,190 +2,191 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geometry Dash Simple Clone</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>GD Clone JS</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #111; color: white; font-family: 'Courier New', Courier, monospace; }
+        body { margin: 0; overflow: hidden; background: #111; color: white; font-family: 'Courier New', Courier, monospace; }
         canvas { display: block; }
+        #ui { position: absolute; top: 10px; left: 10px; pointer-events: none; font-size: 20px; font-weight: bold; }
         #endScreen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.85); display: none;
-            justify-content: center; align-items: center; flex-direction: column;
-            color: #00ffcc; font-size: 48px; text-align: center;
+            background: rgba(0,0,0,0.85); display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+            text-align: center;
         }
-        #timer { position: absolute; top: 10px; left: 10px; font-size: 24px; }
     </style>
 </head>
 <body>
-
-<div id="timer">Time: 60</div>
-<div id="endScreen">
-    <h1>LEVEL COMPLETE</h1>
-    <p style="font-size: 20px;">Press Space to Restart</p>
-</div>
-<canvas id="gameCanvas"></canvas>
+    <div id="ui">Time: <span id="time">60</span>s</div>
+    <div id="endScreen">
+        <h1 id="endTitle">GAME OVER</h1>
+        <p>Tap to Restart</p>
+    </div>
+    <canvas id="gameCanvas"></canvas>
 
 <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+    const uiTime = document.getElementById('time');
     const endScreen = document.getElementById('endScreen');
-    const timerDisplay = document.getElementById('timer');
+    const endTitle = document.getElementById('endTitle');
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    // Resize canvas
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
 
-    // Game Config
-    const GROUND_Y = canvas.height * 0.75;
-    const CUBE_X = 100;
+    // Game Constants
     const GRAVITY = 0.8;
-    const JUMP_FORCE = -15;
-    const SPEED = 5;
-    const LEVEL_DURATION = 60; // seconds
+    const JUMP_FORCE = -13;
+    const GROUND_Y = canvas.height - 100;
+    const CUBE_X = 100;
+    const GAME_DURATION = 60; // seconds
 
-    let cube = {
-        x: CUBE_X, y: GROUND_Y - 40,
-        w: 40, h: 40,
-        vy: 0,
-        onGround: false,
-        rotation: 0
-    };
-
+    // Game State
+    let cube = { y: GROUND_Y - 40, vy: 0, size: 40, jumping: false };
     let obstacles = [];
-    let gameTime = 0;
+    let gameSpeed = 6;
     let frames = 0;
     let isGameOver = false;
-    let isLevelFinished = false;
-    let lastTime = Date.now();
+    let isGameWon = false;
+    let startTime;
+    let animationId;
+    let isHolding = false;
 
-    // Input handling
-    window.addEventListener('keydown', e => {
-        if (e.code === 'Space') {
-            if (isGameOver) { resetGame(); }
-            else if (cube.onGround) {
-                cube.vy = JUMP_FORCE;
-                cube.onGround = false;
-            }
-        }
-    });
-
+    // Obstacle Management
     function spawnObstacle() {
-        const type = Math.random() > 0.4 ? 'spike' : 'block';
-        const height = type === 'spike' ? 40 : 60;
-        obstacles.push({
-            x: canvas.width,
-            y: GROUND_Y - height,
-            w: 40,
-            h: height,
-            type: type
-        });
+        let type = Math.random() > 0.3 ? 'spike' : 'block';
+        let x = canvas.width;
+        let y = GROUND_Y;
+        let width = type === 'spike' ? 40 : 50;
+        let height = type === 'spike' ? 40 : 50;
+        obstacles.push({ x, y, width, height, type });
     }
+
+    // Input Handling
+    function jump() {
+        if (!cube.jumping && !isGameOver) {
+            cube.vy = JUMP_FORCE;
+            cube.jumping = true;
+        }
+    }
+
+    function startTouch(e) {
+        if (isGameOver) {
+            resetGame();
+        } else {
+            isHolding = true;
+            jump();
+        }
+        e.preventDefault();
+    }
+
+    function endTouch() { isHolding = false; }
+
+    window.addEventListener('mousedown', startTouch);
+    window.addEventListener('mouseup', endTouch);
+    window.addEventListener('touchstart', startTouch);
+    window.addEventListener('touchend', endTouch);
 
     function resetGame() {
-        cube.y = GROUND_Y - 40;
-        cube.vy = 0;
+        cube = { y: GROUND_Y - 40, vy: 0, size: 40, jumping: false };
         obstacles = [];
         frames = 0;
-        gameTime = 0;
         isGameOver = false;
-        isLevelFinished = false;
+        isGameWon = false;
+        gameSpeed = 6;
         endScreen.style.display = 'none';
-        loop();
+        startTime = Date.now();
+        gameLoop();
     }
 
-    function loop() {
-        if (isGameOver || isLevelFinished) return;
-        
-        frames++;
-        if (frames % 100 === 0) spawnObstacle();
+    function gameLoop() {
+        if (isGameOver) return;
 
-        // Update Time
-        let now = Date.now();
-        if (now - lastTime >= 1000) {
-            gameTime++;
-            lastTime = now;
-            timerDisplay.innerText = "Time: " + (LEVEL_DURATION - gameTime);
-            if (gameTime >= LEVEL_DURATION) {
-                isLevelFinished = true;
-                endScreen.style.display = 'flex';
-                return;
-            }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Timer
+        let elapsed = Math.floor((Date.now() - startTime) / 1000);
+        let remaining = GAME_DURATION - elapsed;
+        uiTime.innerText = Math.max(0, remaining);
+
+        if (remaining <= 0) {
+            endGame(true);
+            return;
         }
 
-        // Physics
+        // Background / Ground
+        ctx.fillStyle = "#333";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#00FF00"; // Ground color
+        ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+
+        // Cube Physics
         cube.vy += GRAVITY;
         cube.y += cube.vy;
 
-        if (cube.y + cube.h > GROUND_Y) {
-            cube.y = GROUND_Y - cube.h;
+        if (cube.y + cube.size > GROUND_Y) {
+            cube.y = GROUND_Y - cube.size;
             cube.vy = 0;
-            cube.onGround = true;
-            // Snaps rotation to 90 degrees on ground
-            cube.rotation = Math.round(cube.rotation / 90) * 90;
-        } else {
-            cube.onGround = false;
-            cube.rotation += 3; // Spin in air
+            cube.jumping = false;
         }
 
-        // Move obstacles
-        obstacles.forEach((o, i) => {
-            o.x -= SPEED;
-            
-            // Collision detection
-            if (cube.x < o.x + o.w && cube.x + cube.w > o.x &&
-                cube.y < o.y + o.h && cube.y + cube.h > o.y) {
-                isGameOver = true;
-                endScreen.style.display = 'flex';
-                endScreen.innerHTML = "<h1>GAME OVER</h1><p>Press Space</p>";
-            }
-
-            if (o.x + o.w < 0) obstacles.splice(i, 1);
-        });
-
-        draw();
-        requestAnimationFrame(loop);
-    }
-
-    function draw() {
-        // Background
-        ctx.fillStyle = '#222';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Ground
-        ctx.fillStyle = '#444';
-        ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 4;
-        ctx.strokeRect(0, GROUND_Y, canvas.width, 2);
-
-        // Cube
-        ctx.save();
-        ctx.translate(cube.x + cube.w/2, cube.y + cube.h/2);
-        ctx.rotate(cube.rotation * Math.PI / 180);
-        ctx.fillStyle = '#00ffff';
-        ctx.fillRect(-cube.w/2, -cube.h/2, cube.w, cube.h);
-        // Eye
-        ctx.fillStyle = 'white';
-        ctx.fillRect(5, -15, 15, 15);
-        ctx.restore();
+        // Draw Cube
+        ctx.fillStyle = "#00FFFF";
+        ctx.fillRect(CUBE_X, cube.y, cube.size, cube.size);
+        ctx.strokeStyle = "white";
+        ctx.strokeRect(CUBE_X, cube.y, cube.size, cube.size);
 
         // Obstacles
-        obstacles.forEach(o => {
+        if (frames % 90 === 0) spawnObstacle(); // Spawn rate
+
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            let o = obstacles[i];
+            o.x -= gameSpeed;
+
+            // Draw Obstacles
+            ctx.fillStyle = o.type === 'spike' ? "#FF4444" : "#FFCC00";
             if (o.type === 'spike') {
-                ctx.fillStyle = '#ff4444';
                 ctx.beginPath();
-                ctx.moveTo(o.x, GROUND_Y);
-                ctx.lineTo(o.x + o.w / 2, o.y);
-                ctx.lineTo(o.x + o.w, GROUND_Y);
+                ctx.moveTo(o.x, o.y);
+                ctx.lineTo(o.x + o.width / 2, o.y - o.height);
+                ctx.lineTo(o.x + o.width, o.y);
                 ctx.fill();
             } else {
-                ctx.fillStyle = '#ffcc00';
-                ctx.fillRect(o.x, o.y, o.w, o.h);
+                ctx.fillRect(o.x, o.y - o.height, o.width, o.height);
             }
-        });
+
+            // Collision Detection
+            if (
+                CUBE_X + cube.size > o.x &&
+                CUBE_X < o.x + o.width &&
+                cube.y + cube.size > (o.type === 'spike' ? o.y - o.height : o.y - o.height)
+            ) {
+                endGame(false);
+            }
+
+            // Remove off-screen
+            if (o.x < -100) obstacles.splice(i, 1);
+        }
+
+        frames++;
+        requestAnimationFrame(gameLoop);
     }
 
-    loop();
+    function endGame(won) {
+        isGameOver = true;
+        endScreen.style.display = 'flex';
+        endTitle.innerText = won ? "YOU WIN!" : "GAME OVER";
+        endTitle.style.color = won ? "#00FF00" : "#FF4444";
+    }
+
+    // Start
+    resetGame();
+
 </script>
 </body>
 </html>
-
