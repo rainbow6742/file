@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Neon Portal Snake</title>
+    <style>
+        body { 
+            background: #050505; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; height: 100vh; margin: 0; 
+            color: #0ff; font-family: sans-serif; overflow: hidden;
+        }
+        #score { font-size: 3rem; font-weight: bold; margin-bottom: 10px; font-family: monospace; }
+        canvas { 
+            border: 5px solid #111; 
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.1); 
+            background: #000; 
+        }
+        .status { margin-top: 10px; color: #555; text-transform: uppercase; letter-spacing: 2px; }
+        #power-timer { color: #ffff00; font-weight: bold; height: 20px; }
+    </style>
+</head>
+<body>
+
+    <div id="score">00</div>
+    <div id="power-timer"></div>
+    <canvas id="game" width="400" height="400"></canvas>
+    <div class="status">Portals Active • Eat Yellow for Invincibility</div>
+
+<script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const scoreEl = document.getElementById("score");
+    const timerEl = document.getElementById("power-timer");
+
+    const box = 20;
+    let score = 0;
+    let snake = [{ x: 10 * box, y: 10 * box }];
+    let food = { x: 5 * box, y: 5 * box };
+    let powerUp = null;
+    let d = "RIGHT";
+    let isInvincible = false;
+    let invincibilityTimer = 0;
+
+    document.addEventListener("keydown", e => {
+        if(e.key === "ArrowLeft" && d !== "RIGHT") d = "LEFT";
+        if(e.key === "ArrowUp" && d !== "DOWN") d = "UP";
+        if(e.key === "ArrowRight" && d !== "LEFT") d = "RIGHT";
+        if(e.key === "ArrowDown" && d !== "UP") d = "DOWN";
+    });
+
+    function draw() {
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw Food
+        ctx.fillStyle = "#ff00ff";
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = "#ff00ff";
+        ctx.fillRect(food.x + 2, food.y + 2, box - 4, box - 4);
+
+        // Draw Power-Up
+        if (powerUp) {
+            ctx.fillStyle = "#ffff00";
+            ctx.shadowColor = "#ffff00";
+            ctx.beginPath();
+            ctx.arc(powerUp.x + box/2, powerUp.y + box/2, box/3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Draw Snake
+        snake.forEach((part, i) => {
+            ctx.fillStyle = isInvincible ? "#ffff00" : (i === 0 ? "#00ffff" : "#008888");
+            ctx.shadowBlur = i === 0 ? 15 : 0;
+            ctx.fillRect(part.x + 1, part.y + 1, box - 2, box - 2);
+        });
+        ctx.shadowBlur = 0;
+
+        let nx = snake[0].x;
+        let ny = snake[0].y;
+
+        if(d === "LEFT") nx -= box;
+        if(d === "UP") ny -= box;
+        if(d === "RIGHT") nx += box;
+        if(d === "DOWN") ny += box;
+
+        // --- PORTAL WRAPPING ---
+        if (nx < 0) nx = canvas.width - box;
+        else if (nx >= canvas.width) nx = 0;
+        if (ny < 0) ny = canvas.height - box;
+        else if (ny >= canvas.height) ny = 0;
+
+        // Collision Check (Skip tail collision if invincible)
+        if (!isInvincible && snake.some(p => p.x === nx && p.y === ny)) {
+            alert("GAME OVER! Score: " + score);
+            location.reload();
+        }
+
+        // Check Food
+        if (nx === food.x && ny === food.y) {
+            score++;
+            scoreEl.innerText = score < 10 ? "0" + score : score;
+            food = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box };
+            // Spawn power-up randomly
+            if (!powerUp && Math.random() < 0.2) {
+                powerUp = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box };
+            }
+        } else {
+            snake.pop();
+        }
+
+        // Check Power-Up
+        if (powerUp && nx === powerUp.x && ny === powerUp.y) {
+            isInvincible = true;
+            invincibilityTimer = 50; // roughly 5 seconds
+            powerUp = null;
+        }
+
+        // Timer Logic
+        if (invincibilityTimer > 0) {
+            invincibilityTimer--;
+            timerEl.innerText = "INVINCIBLE: " + Math.ceil(invincibilityTimer / 10) + "s";
+            if (invincibilityTimer === 0) {
+                isInvincible = false;
+                timerEl.innerText = "";
+            }
+        }
+
+        snake.unshift({ x: nx, y: ny });
+    }
+
+    setInterval(draw, 100);
+</script>
+</body>
+</html>
+
