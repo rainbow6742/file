@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Multiplication Challenge</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; }
+        #question { font-size: 2em; margin-bottom: 20px; }
+        .btn { padding: 10px 20px; font-size: 1.2em; margin: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Solve to Survive</h1>
+    <div id="question"></div>
+    <div id="options"></div>
+
+    <script>
+        let correctAns;
+        function generateQuestion() {
+            let n1 = Math.floor(Math.random() * 10) + 1;
+            let n2 = Math.floor(Math.random() * 10) + 1;
+            correctAns = n1 * n2;
+            
+            document.getElementById('question').innerText = `${n1} x ${n2} = ?`;
+            
+            // Generate options
+            let options = [correctAns, correctAns + 2, correctAns - 1, correctAns + 5];
+            options.sort(() => Math.random() - 0.5); // Shuffle
+            
+            let optionsDiv = document.getElementById('options');
+            optionsDiv.innerHTML = '';
+            options.forEach(opt => {
+                let btn = document.createElement('button');
+                btn.className = 'btn';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt);
+                optionsDiv.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(answer) {
+            if (answer === correctAns) {
+                generateQuestion(); // Correct: next question
+            } else {
+                // Wrong: CRASH
+                alert("Wrong! Game Over.");
+                window.close();
+            }
+        }
+        generateQuestion();
+    </script>
+</body>
+</html>
+
