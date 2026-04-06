@@ -2,134 +2,135 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Neon Portal Snake</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Snake: Prestige & Shop</title>
     <style>
-        body { 
-            background: #050505; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; height: 100vh; margin: 0; 
-            color: #0ff; font-family: sans-serif; overflow: hidden;
-        }
-        #score { font-size: 3rem; font-weight: bold; margin-bottom: 10px; font-family: monospace; }
-        canvas { 
-            border: 5px solid #111; 
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.1); 
-            background: #000; 
-        }
-        .status { margin-top: 10px; color: #555; text-transform: uppercase; letter-spacing: 2px; }
-        #power-timer { color: #ffff00; font-weight: bold; height: 20px; }
+        body { background: #050505; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; color: #0ff; font-family: 'Courier New', monospace; overflow: hidden; touch-action: none; }
+        .header { display: flex; gap: 5px; margin-top: 5px; z-index: 10; }
+        .stat { text-align: center; background: rgba(0,0,0,0.8); padding: 5px; border-radius: 5px; border: 1px solid #111; min-width: 50px; }
+        .label { font-size: 0.5rem; color: #008888; display: block; font-weight: bold; }
+        .val { font-size: 0.9rem; font-weight: bold; }
+        #rank-display { color: #fff; text-shadow: 0 0 10px #fff; font-size: 0.8rem; margin-top: 5px; font-weight: 900; }
+        
+        .game-container { position: relative; margin: 5px 0; border: 2px solid #0ff; }
+        canvas { background: #000; display: block; max-width: 95vw; max-height: 35vh; }
+        
+        #shop-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; padding: 10px; box-sizing: border-box; }
+        .shop-grid { display: flex; gap: 5px; margin: 5px 0; }
+        .skin-btn { width: 35px; height: 35px; border: 1px solid #fff; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.4rem; color: white; }
+        .skin-btn.locked { opacity: 0.3; filter: grayscale(1); }
+        .buy-power { width: 160px; padding: 5px; font-size: 0.6rem; font-weight: bold; border-radius: 5px; cursor: pointer; margin-top: 3px; border: 1px solid #fff; }
+        
+        .controls { display: grid; grid-template-columns: repeat(3, 65px); gap: 8px; margin-top: 5px; }
+        .btn { width: 65px; height: 65px; background: rgba(0, 255, 255, 0.1); border: 2px solid #0ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #0ff; }
+        .btn:active { background: #0ff; color: #000; }
+        .timers { font-size: 0.6rem; height: 20px; text-align: center; }
     </style>
 </head>
 <body>
-
-    <div id="score">00</div>
-    <div id="power-timer"></div>
-    <canvas id="game" width="400" height="400"></canvas>
-    <div class="status">Portals Active • Eat Yellow for Invincibility</div>
+    <div id="rank-display">RANK: NOVICE [V]</div>
+    <div class="header">
+        <div class="stat"><span class="label">SCORE</span><div id="score" class="val">0</div></div>
+        <div class="stat"><span class="label">BEST</span><div id="highScore" class="val">0</div></div>
+        <div class="stat"><span class="label">COINS</span><div id="coins" class="val" style="color:#ffff00">0</div></div>
+    </div>
+    <div class="timers"><div id="t-2x" style="color:#00f"></div><div id="t-mag" style="color:#0ff"></div></div>
+    <div class="game-container">
+        <canvas id="game" width="400" height="400"></canvas>
+        <div id="shop-overlay">
+            <button id="reward-btn" style="background:#ff0; border:none; padding:8px 15px; font-weight:bold; border-radius:4px;" onclick="claimReward()">FREE COINS</button>
+            <div id="timer-text" style="font-size:0.5rem; margin:5px 0;"></div>
+            <h4 style="margin:2px 0; font-size:0.7rem; color:#0cc;">POWER-UPS</h4>
+            <button id="b-2x" class="buy-power" style="background:#00f;color:#fff" onclick="buyP('2x', 20)">2X COINS (20¢)</button>
+            <button id="b-mag" class="buy-power" style="background:#0cc;color:#000" onclick="buyP('mag', 15)">MAGNET (15¢)</button>
+            <div class="shop-grid">
+                <div id="c-#0ff" class="skin-btn" style="background:#0ff" onclick="selectSkin('#0ff')">USE</div>
+                <div id="c-#0f0" class="skin-btn locked" style="background:#0f0" onclick="buySkin('#0f0', 10)">10</div>
+                <div id="c-#f00" class="skin-btn locked" style="background:#f00" onclick="buySkin('#f00', 25)">25</div>
+                <div id="c-#f0f" class="skin-btn locked" style="background:#f0f" onclick="buySkin('#f0f', 50)">50</div>
+            </div>
+            <button style="width:140px; height:35px; background:#0ff; border:none; font-weight:bold; border-radius:5px;" onclick="startGame()">START GAME</button>
+        </div>
+    </div>
+    <div class="controls">
+        <div></div><div class="btn" onpointerdown="setDir('UP')">▲</div><div></div>
+        <div class="btn" onpointerdown="setDir('LEFT')">◀</div><div class="btn" onpointerdown="setDir('DOWN')">▼</div><div class="btn" onpointerdown="setDir('RIGHT')">▶</div>
+    </div>
 
 <script>
-    const canvas = document.getElementById("game");
-    const ctx = canvas.getContext("2d");
-    const scoreEl = document.getElementById("score");
-    const timerEl = document.getElementById("power-timer");
+    const canvas = document.getElementById("game"), ctx = canvas.getContext("2d");
+    let score = 0, coins = parseInt(localStorage.getItem("nCoins")) || 0, highScore = parseInt(localStorage.getItem("nBest")) || 0;
+    let snakeColor = localStorage.getItem("nColor") || "#0ff", unlocked = JSON.parse(localStorage.getItem("nUnlocked")) || ["#0ff"], lastClaim = parseInt(localStorage.getItem("nLastClaim")) || 0;
+    let snake = [{x:200, y:200}], food = {x:100, y:100}, coin = {x:300, y:300}, gem = {x:-40, y:-40, active:false}, d = "RIGHT", active = false;
+    let dbP = {x:-40, y:-40, active: false}, mgP = {x:-40, y:-40, active: false}, t2x = 0, tMg = 0, pre2x = false, preMg = false;
 
-    const box = 20;
-    let score = 0;
-    let snake = [{ x: 10 * box, y: 10 * box }];
-    let food = { x: 5 * box, y: 5 * box };
-    let powerUp = null;
-    let d = "RIGHT";
-    let isInvincible = false;
-    let invincibilityTimer = 0;
+    const milestones = [100, 200, 500, 1000, 1500, 2000, 3000, 5000];
+    const rankNames = ["NOVICE [V]", "BRONZE [III]", "SILVER [II]", "GOLD [I]", "ELITE [X]", "MASTER [M]", "GRANDMASTER [GM]", "LEGEND [L]", "MYTHIC [S]"];
 
-    document.addEventListener("keydown", e => {
-        if(e.key === "ArrowLeft" && d !== "RIGHT") d = "LEFT";
-        if(e.key === "ArrowUp" && d !== "DOWN") d = "UP";
-        if(e.key === "ArrowRight" && d !== "LEFT") d = "RIGHT";
-        if(e.key === "ArrowDown" && d !== "UP") d = "DOWN";
-    });
-
-    function draw() {
-        ctx.fillStyle = "black";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Draw Food
-        ctx.fillStyle = "#ff00ff";
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "#ff00ff";
-        ctx.fillRect(food.x + 2, food.y + 2, box - 4, box - 4);
-
-        // Draw Power-Up
-        if (powerUp) {
-            ctx.fillStyle = "#ffff00";
-            ctx.shadowColor = "#ffff00";
-            ctx.beginPath();
-            ctx.arc(powerUp.x + box/2, powerUp.y + box/2, box/3, 0, Math.PI * 2);
-            ctx.fill();
+    function getRank() {
+        let rankIdx = 0;
+        for (let i = 0; i < milestones.length; i++) {
+            if (coins >= milestones[i]) rankIdx = i + 1; else break;
         }
-
-        // Draw Snake
-        snake.forEach((part, i) => {
-            ctx.fillStyle = isInvincible ? "#ffff00" : (i === 0 ? "#00ffff" : "#008888");
-            ctx.shadowBlur = i === 0 ? 15 : 0;
-            ctx.fillRect(part.x + 1, part.y + 1, box - 2, box - 2);
-        });
-        ctx.shadowBlur = 0;
-
-        let nx = snake[0].x;
-        let ny = snake[0].y;
-
-        if(d === "LEFT") nx -= box;
-        if(d === "UP") ny -= box;
-        if(d === "RIGHT") nx += box;
-        if(d === "DOWN") ny += box;
-
-        // --- PORTAL WRAPPING ---
-        if (nx < 0) nx = canvas.width - box;
-        else if (nx >= canvas.width) nx = 0;
-        if (ny < 0) ny = canvas.height - box;
-        else if (ny >= canvas.height) ny = 0;
-
-        // Collision Check (Skip tail collision if invincible)
-        if (!isInvincible && snake.some(p => p.x === nx && p.y === ny)) {
-            alert("GAME OVER! Score: " + score);
-            location.reload();
+        if (coins > 5000) {
+            let extra = Math.floor((coins - 5000) / 2500);
+            return `GODLY [+${extra}]`;
         }
-
-        // Check Food
-        if (nx === food.x && ny === food.y) {
-            score++;
-            scoreEl.innerText = score < 10 ? "0" + score : score;
-            food = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box };
-            // Spawn power-up randomly
-            if (!powerUp && Math.random() < 0.2) {
-                powerUp = { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box };
-            }
-        } else {
-            snake.pop();
-        }
-
-        // Check Power-Up
-        if (powerUp && nx === powerUp.x && ny === powerUp.y) {
-            isInvincible = true;
-            invincibilityTimer = 50; // roughly 5 seconds
-            powerUp = null;
-        }
-
-        // Timer Logic
-        if (invincibilityTimer > 0) {
-            invincibilityTimer--;
-            timerEl.innerText = "INVINCIBLE: " + Math.ceil(invincibilityTimer / 10) + "s";
-            if (invincibilityTimer === 0) {
-                isInvincible = false;
-                timerEl.innerText = "";
-            }
-        }
-
-        snake.unshift({ x: nx, y: ny });
+        return rankNames[rankIdx];
     }
 
-    setInterval(draw, 100);
+    function save() { localStorage.setItem("nCoins", coins); localStorage.setItem("nUnlocked", JSON.stringify(unlocked)); localStorage.setItem("nColor", snakeColor); localStorage.setItem("nBest", highScore); localStorage.setItem("nLastClaim", lastClaim); }
+    function claimReward() { const now = Date.now(); if (now - lastClaim >= 10800000) { coins += 10; lastClaim = now; save(); updateUI(); alert("+10 Coins!"); } }
+    function buyP(t, p) { if (coins >= p) { coins -= p; if(t==='2x') pre2x = true; else preMg = true; save(); updateUI(); } }
+    function buySkin(c, p) { if (coins >= p && !unlocked.includes(c)) { coins -= p; unlocked.push(c); selectSkin(c); save(); updateUI(); } }
+    function selectSkin(c) { if (unlocked.includes(c)) { snakeColor = c; save(); updateUI(); } }
+
+    function updateUI() {
+        document.getElementById("coins").innerText = coins; 
+        document.getElementById("highScore").innerText = highScore; 
+        document.getElementById("score").innerText = score;
+        document.getElementById("rank-display").innerText = "RANK: " + getRank();
+        ["#0ff", "#0f0", "#f00", "#f0f"].forEach(c => { const b = document.getElementById("c-"+c); if(unlocked.includes(c)) { b.classList.remove("locked"); b.innerText = (snakeColor === c) ? "OWN" : "USE"; } });
+        const timeDiff = 10800000 - (Date.now() - lastClaim);
+        document.getElementById("reward-btn").disabled = timeDiff > 0;
+        document.getElementById("timer-text").innerText = timeDiff <= 0 ? "Ready!" : "Next: " + Math.floor(timeDiff/3600000) + "h " + Math.floor((timeDiff%3600000)/60000) + "m";
+        document.getElementById("t-2x").innerText = t2x > 0 ? "2X: " + Math.ceil(t2x/10) + "s" : "";
+        document.getElementById("t-mag").innerText = tMg > 0 ? "MAG: " + Math.ceil(tMg/10) + "s" : "";
+        document.getElementById("b-2x").disabled = coins < 20 || pre2x; document.getElementById("b-mag").disabled = coins < 15 || preMg;
+    }
+
+    function setDir(n) { if(n==="LEFT"&&d!=="RIGHT")d="LEFT"; if(n==="UP"&&d!=="DOWN")d="UP"; if(n==="RIGHT"&&d!=="LEFT")d="RIGHT"; if(n==="DOWN"&&d!=="UP")d="DOWN"; }
+    function startGame() { active = true; score = 0; snake = [{x:200, y:200}]; d = "RIGHT"; t2x = pre2x ? 300 : 0; tMg = preMg ? 300 : 0; pre2x = preMg = false; dbP.active = mgP.active = gem.active = false; document.getElementById("shop-overlay").style.display = "none"; updateUI(); }
+
+    function draw() {
+        ctx.fillStyle = "black"; ctx.fillRect(0,0,400,400);
+        if(!active) return;
+        ctx.fillStyle = "#f0f"; ctx.fillRect(food.x+2, food.y+2, 16, 16);
+        ctx.fillStyle = "#ff0"; ctx.beginPath(); ctx.arc(coin.x+10, coin.y+10, 6, 0, 7); ctx.fill();
+        if(gem.active) { ctx.fillStyle = "#0f0"; ctx.beginPath(); ctx.moveTo(gem.x+10, gem.y+2); ctx.lineTo(gem.x+18, gem.y+10); ctx.lineTo(gem.x+10, gem.y+18); ctx.lineTo(gem.x+2, gem.y+10); ctx.fill(); }
+        if(dbP.active){ ctx.fillStyle = "#00f"; ctx.beginPath(); ctx.arc(dbP.x+10, dbP.y+10, 8, 0, 7); ctx.fill(); }
+        if(mgP.active){ ctx.fillStyle = "#0cc"; ctx.beginPath(); ctx.arc(mgP.x+10, mgP.y+10, 8, 0, 7); ctx.fill(); }
+        
+        if(tMg > 0) { [coin, dbP, mgP, gem].forEach(p => { if(p.active || p === coin) { let dx = snake[0].x - p.x, dy = snake[0].y - p.y, dist = Math.sqrt(dx*dx + dy*dy); if(dist < 80) { p.x += dx/5; p.y += dy/5; } } }); }
+
+        snake.forEach((p, i) => { ctx.fillStyle = i === 0 ? "white" : (tMg > 0 ? "#0cc" : (t2x > 0 ? "#00f" : snakeColor)); ctx.fillRect(p.x+1, p.y+1, 18, 18); });
+        let nx = snake[0].x, ny = snake[0].y;
+        if(d==="LEFT") nx-=20; if(d==="UP") ny-=20; if(d==="RIGHT") nx+=20; if(d==="DOWN") ny+=20;
+        if(nx<0) nx=380; else if(nx>380) nx=0; if(ny<0) ny=380; else if(ny>380) ny=0;
+        if(snake.some(p => p.x === nx && p.y === ny)) { active = false; if(score > highScore) highScore = score; save(); updateUI(); document.getElementById("shop-overlay").style.display = "flex"; return; }
+        
+        if(nx === food.x && ny === food.y) { score++; food = {x:Math.floor(Math.random()*20)*20, y:Math.floor(Math.random()*20)*20}; if(Math.random() < 0.1) dbP = {x:Math.floor(Math.random()*20)*20, y:Math.floor(Math.random()*20)*20, active:true}; if(Math.random() < 0.1) mgP = {x:Math.floor(Math.random()*20)*20, y:Math.floor(Math.random()*20)*20, active:true}; if(Math.random() < 0.05) gem = {x:Math.floor(Math.random()*20)*20, y:Math.floor(Math.random()*20)*20, active:true}; }
+        else if(Math.abs(nx-coin.x)<15 && Math.abs(ny-coin.y)<15) { coins += (t2x>0?2:1); coin = {x:Math.floor(Math.random()*20)*20, y:Math.floor(Math.random()*20)*20}; updateUI(); }
+        else if(gem.active && Math.abs(nx-gem.x)<15 && Math.abs(ny-gem.y)<15) { coins += (t2x>0?20:10); gem.active = false; gem.x = -40; updateUI(); }
+        else if(dbP.active && Math.abs(nx-dbP.x)<15 && Math.abs(ny-dbP.y)<15) { t2x = 300; dbP.active = false; }
+        else if(mgP.active && Math.abs(nx-mgP.x)<15 && Math.abs(ny-mgP.y)<15) { tMg = 300; mgP.active = false; }
+        else snake.pop();
+
+        if(t2x > 0) t2x--; if(tMg > 0) tMg--;
+        if(t2x%10===0 || tMg%10===0) updateUI();
+        snake.unshift({x:nx, y:ny});
+    }
+    updateUI(); setInterval(draw, 100);
 </script>
 </body>
 </html>
-
