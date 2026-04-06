@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Audio Glitch - HARD MODE</title>
+    <style>
+        body { 
+            margin: 0; background: #000; color: #0f0; 
+            font-family: 'Courier New', monospace; overflow: hidden; 
+            display: flex; flex-direction: column; justify-content: center; 
+            align-items: center; height: 100vh;
+        }
+        #glitch-text { font-size: 5rem; font-weight: bold; text-align: center; pointer-events: none; text-shadow: 0 0 15px #0f0; z-index: 1; }
+        #speed-counter { position: absolute; top: 20px; color: #444; font-size: 1.2rem; }
+        
+        .btn {
+            padding: 15px 30px; font-size: 1.2rem;
+            background: transparent; border: 2px solid #0f0; color: #0f0;
+            cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold;
+            transition: background 0.2s, transform 0.1s;
+            z-index: 10;
+        }
+        .btn:hover { background: #0f0; color: #000; box-shadow: 0 0 20px #0f0; }
+        
+        #restore-btn { 
+            position: absolute; 
+            opacity: 0; 
+            pointer-events: none;
+            transition: opacity 0.5s, top 0.2s, left 0.2s;
+        }
+        #restore-btn.visible { opacity: 1; pointer-events: auto; }
+        .glitch-bar { position: absolute; width: 100%; height: 4px; pointer-events: none; }
+        
+        #mode-tag { position: absolute; bottom: 20px; color: red; font-weight: bold; letter-spacing: 5px; }
+    </style>
+</head>
+<body>
+
+    <div id="speed-counter">STABILITY: 100%</div>
+    <div id="glitch-text">OFFLINE</div>
+    <div id="mode-tag">HARD MODE ACTIVE</div>
+    
+    <button id="start-btn" class="btn" onclick="initAudio()">[ INITIALIZE SYSTEM ]</button>
+    <button id="restore-btn" class="btn" onclick="restoreSystem()" onmouseover="evadeMouse()">[ SYSTEM RESTORE ]</button>
+
+    <script>
+        let glitchSpeed = 600;
+        let intensity = 0;
+        let isCrashed = false;
+        let audioCtx, oscillator, gainNode;
+
+        const textEl = document.getElementById('glitch-text');
+        const counterEl = document.getElementById('speed-counter');
+        const restoreBtn = document.getElementById('restore-btn');
+        const startBtn = document.getElementById('start-btn');
+
+        function initAudio() {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            oscillator = audioCtx.createOscillator();
+            gainNode = audioCtx.createGain();
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(40, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.start();
+
+            startBtn.style.display = 'none';
+            triggerGlitch();
+            startAcceleration();
+        }
+
+        // Hard Mode: Button moves when you get close
+        function evadeMouse() {
+            if (intensity < 15) return;
+            const padding = 100;
+            const newX = Math.random() * (window.innerWidth - padding * 2) + padding;
+            const newY = Math.random() * (window.innerHeight - padding * 2) + padding;
+            
+            restoreBtn.style.left = newX + 'px';
+            restoreBtn.style.top = newY + 'px';
+            
+            // Make it smaller as instability rises
+            const scale = Math.max(0.4, 1 - (intensity / 150));
+            restoreBtn.style.transform = `scale(${scale}) rotate(${(Math.random()-0.5)*20}deg)`;
+        }
+
+        function triggerGlitch() {
+            if (isCrashed) return;
+
+            const phrases = ["INTRUDER", "EVADE", "FLEEING_DATA", "HARD_RESET_FAIL", "LOCKDOWN", "TERMINATE"];
+            textEl.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+            
+            textEl.style.transform = `translate(${(Math.random()-0.5) * intensity * 2}px, ${(Math.random()-0.5) * intensity * 2}px) skew(${Math.random() * intensity}deg)`;
+            textEl.style.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+            
+            if (audioCtx) {
+                oscillator.frequency.exponentialRampToValueAtTime(40 + (intensity * 8), audioCtx.currentTime + 0.05);
+                gainNode.gain.linearRampToValueAtTime((intensity / 400), audioCtx.currentTime + 0.05);
+            }
+
+            if (Math.random() * 100 < intensity) {
+                const bar = document.createElement('div');
+                bar.className = 'glitch-bar';
+                bar.style.top = Math.random() * 100 + '%';
+                bar.style.backgroundColor = textEl.style.color;
+                document.body.appendChild(bar);
+                setTimeout(() => bar.remove(), 40);
+            }
+
+            setTimeout(triggerGlitch, glitchSpeed);
+        }
+
+        function startAcceleration() {
+            setInterval(() => {
+                if (isCrashed) return;
+
+                glitchSpeed = Math.max(10, glitchSpeed - 25);
+                intensity += 2.5;
+                
+                counterEl.innerText = `STABILITY: ${Math.max(0, 100 - Math.floor(intensity))}%`;
+                
+                if (intensity > 15 && !restoreBtn.classList.contains('visible')) {
+                    restoreBtn.classList.add('visible');
+                    evadeMouse(); // Initial spawn
+                }
+
+                if (intensity >= 100) {
+                    isCrashed = true;
+                    textEl.innerText = "OVERHEATED";
+                    textEl.style.color = "white";
+                    document.body.style.background = "red";
+                    gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2);
+                }
+            }, 1000);
+        }
+
+        function restoreSystem() {
+            isCrashed = false;
+            glitchSpeed = 600;
+            intensity = 0;
+            document.body.style.background = "#000";
+            textEl.innerText = "REBOOTING...";
+            textEl.style.color = "#0f0";
+            restoreBtn.classList.remove('visible');
+            if (gainNode) gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            triggerGlitch();
+        }
+    </script>
+</body>
+</html>
+
