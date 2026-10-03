@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon Horizons - Song Player</title>
+    <title>Musak</title>
     <style>
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
@@ -108,8 +108,8 @@
         let lyricTimer = null;
         let audioTimer = null;
 
-        // Millisecond delays between lyric lines
-        const intervals =; 
+        // FIXED: Added numerical timing intervals (in milliseconds)
+        const intervals = [3000, 3000, 3000, 3000, 4000]; 
 
         function togglePlayback() {
             if (!isPlaying) {
@@ -117,7 +117,10 @@
                 document.getElementById('playBtn').textContent = "⏹️ Stop Song";
                 currentLine = 0;
                 
-                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                // Initialize audio context cleanly upon user gesture
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
                 
                 advanceLyrics();
                 playSynthLoop();
@@ -143,7 +146,8 @@
             currentLine++;
 
             if (currentLine <= 5) {
-                document.getElementById(`line${currentLine}`).classList.add('active');
+                const targetLine = document.getElementById(`line${currentLine}`);
+                if (targetLine) targetLine.classList.add('active');
                 lyricTimer = setTimeout(advanceLyrics, intervals[currentLine - 1]);
             } else {
                 stopPlayback();
