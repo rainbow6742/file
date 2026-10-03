@@ -108,7 +108,7 @@
         let lyricTimer = null;
         let audioTimer = null;
 
-        // Timestamps matching transitions
+        // Millisecond delays between lyric lines
         const intervals =; 
 
         function togglePlayback() {
@@ -117,7 +117,6 @@
                 document.getElementById('playBtn').textContent = "⏹️ Stop Song";
                 currentLine = 0;
                 
-                // Initialize audio context safely on user interaction
                 if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 
                 advanceLyrics();
@@ -133,7 +132,6 @@
             clearTimeout(lyricTimer);
             clearTimeout(audioTimer);
             
-            // Reset to intro prompt
             document.querySelectorAll('.lyric-line').forEach(l => l.classList.remove('active'));
             document.getElementById('line0').classList.add('active');
         }
@@ -152,11 +150,10 @@
             }
         }
 
-        // Procedural Audio Engine - Generates actual musical synth chords over the web audio API
         function playSynthLoop() {
             if (!isPlaying) return;
 
-            const chords = [130.81, 146.83, 164.81, 196.00]; // C3, D3, E3, G3 frequencies
+            const chords = [130.81, 146.83, 164.81, 196.00]; 
             let currentNote = chords[Math.floor(Math.random() * chords.length)];
 
             let osc = audioCtx.createOscillator();
@@ -165,17 +162,16 @@
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(currentNote, audioCtx.currentTime);
             
-            // Soothing fade out wrap parameters
-            gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+            gainNode.gain.setValueAtTime(0.12, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.7);
 
             osc.connect(gainNode);
             gainNode.connect(audioCtx.destination);
 
             osc.start();
-            osc.stop(audioCtx.currentTime + 0.8);
+            osc.stop(audioCtx.currentTime + 0.7);
 
-            audioTimer = setTimeout(playSynthLoop, 600);
+            audioTimer = setTimeout(playSynthLoop, 500);
         }
     </script>
 </body>
